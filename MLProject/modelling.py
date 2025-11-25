@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 import mlflow
@@ -42,11 +43,14 @@ def main() -> None:
         random_state=args.random_state,
     )
 
+    inside_project_run = bool(os.environ.get("MLFLOW_RUN_ID"))
+
     mlflow.set_tracking_uri(TRACKING_DIR.as_uri())
-    mlflow.set_experiment("workflow-ci")
+    if not inside_project_run:
+        mlflow.set_experiment("workflow-ci")
     mlflow.sklearn.autolog(log_models=True)
 
-    with mlflow.start_run(run_name="logreg-ci"):
+    with mlflow.start_run(run_name="logreg-ci", nested=inside_project_run):
         mlflow.log_params(
             {
                 "data_path": str(data_path),
